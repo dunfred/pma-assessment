@@ -14,6 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
+            'id',
             'email',
             'username',
             'first_name',
@@ -23,6 +24,16 @@ class UserSerializer(serializers.ModelSerializer):
             'photo',
             'contact_number',
             'bio',
+        ]
+
+class SimplifiedUserSerializer(serializers.ModelSerializer):
+    """Simplified User serializer"""
+
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'photo',
         ]
 
 class UserUpdateSerializer(serializers.ModelSerializer):

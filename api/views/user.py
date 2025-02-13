@@ -210,15 +210,15 @@ class UserDetailUpdateView(generics.UpdateAPIView):
     def get_object(self):
         user_id = self.request.user.id
         return generics.get_object_or_404(User, id=user_id)
-    
+
     def patch(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         # Loop through the fields in the validated data and update only those fields.
-        # This will prevent fields been mistakenly overwritten with null values from validated data
         for key, value in serializer.validated_data.items():
+            # This will prevent fields been mistakenly overwritten with null values from validated data
             if value:
                 setattr(instance, key, value)
 
