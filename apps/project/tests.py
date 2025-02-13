@@ -120,6 +120,21 @@ class TestProjectMemberAPI:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN  # Only owners can add members
 
+    def test_add_member_user_already_member(self, authenticated_project_owner, create_user):
+        client, _, project = authenticated_project_owner
+        existing_member = create_user()
+
+        # Add the user as a member first
+        ProjectRole.objects.create(user=existing_member, project=project, role="EDITOR")
+
+        url = reverse("add-member", kwargs={"id": project.id})
+        payload = {"user_id": existing_member.id, "role": "READER"}  # Trying to add again
+
+        response = client.post(url, payload)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["detail"] == "User is already a member"
+
     def test_update_member_role_project_not_found(self, authenticated_project_owner):
         client, _, _ = authenticated_project_owner
         url = reverse("update-member-role", kwargs={"id": 9999})  # Nonexistent project
