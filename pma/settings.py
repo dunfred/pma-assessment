@@ -217,6 +217,8 @@ SPECTACULAR_SETTINGS = {
         'description': 'Find out more about Swagger',
         'url': 'http://swagger.io',
     },
+
+    "COMPONENT_SPLIT_REQUEST": True,  # Ensures accurate schema
 }
 
 # Internationalization
