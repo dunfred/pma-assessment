@@ -105,7 +105,6 @@ class UserRegisterView(APIView):
             }
             
             return Response(data, status=status.HTTP_201_CREATED)
-        return Response({'detail': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(post=extend_schema(
