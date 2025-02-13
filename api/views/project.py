@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from api.pagination import CommentsPagination, ProjectsPagination
+from api.utils.renderers import get_standard_response
 from apps.project.models import Comment, Project, ProjectRole
 from rest_framework.permissions import IsAuthenticated
 from api.serializers.project import CommentCreateSerializer, CommentSerializer, ProjectRoleSerializer, ProjectSerializer, ProjectUpdateSerializer
@@ -25,7 +26,9 @@ from apps.user.models import User
     methods=['get'],
     operation_id='listProjects',
     tags=["Projects"],
-    responses={200: ProjectSerializer(many=True)}
+    responses={
+        200: ProjectSerializer(many=True)
+    }
 ))
 class ProjectListAPIView(generics.ListAPIView):
     serializer_class = ProjectSerializer
@@ -43,7 +46,7 @@ class ProjectListAPIView(generics.ListAPIView):
     methods=['post'],
     tags=["Projects"],
     request=ProjectSerializer,
-    responses={201: ProjectSerializer}
+    responses={201: get_standard_response(ProjectSerializer)}
 ))
 class ProjectCreateAPIView(APIView):
     permission_classes = [IsAuthenticated] # All authenticated users can create projects
@@ -66,7 +69,7 @@ class ProjectCreateAPIView(APIView):
     description="Retrieve details of a specific project.",
     methods=['get'],
     tags=["Projects"],
-    responses={200: ProjectSerializer}
+    responses={200: get_standard_response(ProjectSerializer)}
 ))
 class ProjectDetailAPIView(APIView):
     permission_classes = [IsAuthenticated] # Any project memnber can view a single project
@@ -89,6 +92,8 @@ class ProjectDetailAPIView(APIView):
     methods=['patch'],
     operation_id='updateProject',
     tags=["Projects"],
+    request=ProjectUpdateSerializer,
+    responses= {200: get_standard_response(ProjectUpdateSerializer)}
 ))
 class ProjectUpdateAPIView(generics.UpdateAPIView):
     serializer_class = ProjectUpdateSerializer
@@ -122,6 +127,7 @@ class ProjectUpdateAPIView(generics.UpdateAPIView):
         methods=['delete'],
         operation_id='deleteProject',
         tags=["Projects"],
+        responses={204: "No Content"}
     )
 )
 class ProjectDeleteAPIView(generics.DestroyAPIView):
@@ -139,7 +145,7 @@ class ProjectDeleteAPIView(generics.DestroyAPIView):
     methods=['post'],
     tags=["Project Members"],
     request=ProjectRoleSerializer,
-    responses={201: "{'status': '{user} successfully added to project {project_title}'}"}
+    responses={201: "{'message': 'John successfully added to project Pseudo'}"}
 ))
 class AddMemberAPIView(APIView):
     permission_classes = [IsAuthenticated, IsProjectOwner] # Only owners can add members
@@ -163,7 +169,7 @@ class AddMemberAPIView(APIView):
             return Response({'detail': 'User is already a member'}, status=status.HTTP_400_BAD_REQUEST)
         
         ProjectRole.objects.create(user=user, project=project, role=serializer.validated_data['role'])
-        return Response({'status': f'{user.username.title()} successfully added to project {project.title}'}, status=status.HTTP_201_CREATED)
+        return Response({'message': f'{user.username.title()} successfully added to project {project.title}'}, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(patch=extend_schema(
@@ -172,7 +178,7 @@ class AddMemberAPIView(APIView):
     methods=['patch'],
     tags=["Project Members"],
     request=ProjectRoleSerializer,
-    responses={200: "{'status': 'role updated'}"}
+    responses={200: "{'message': 'role updated'}"}
 ))
 class UpdateMemberRoleAPIView(APIView):
     permission_classes = [IsAuthenticated, IsProjectOwner]  # Only owners can update member roles
@@ -199,7 +205,7 @@ class UpdateMemberRoleAPIView(APIView):
         member_role.role = new_role
         member_role.save()
 
-        return Response({'status': 'role updated'}, status=status.HTTP_200_OK)
+        return Response({'message': 'role updated'}, status=status.HTTP_200_OK)
 
 
 # COMMENTS
@@ -230,7 +236,7 @@ class CommentListAPIView(generics.ListAPIView):
     methods=['post'],
     tags=["Comments"],
     request=CommentCreateSerializer,
-    responses={201: CommentCreateSerializer}
+    responses={201: get_standard_response(CommentCreateSerializer)}
 ))
 class CommentCreateAPIView(generics.CreateAPIView):
     """
@@ -245,7 +251,7 @@ class CommentCreateAPIView(generics.CreateAPIView):
     description="Retrieve details of a specific comment.",
     methods=['get'],
     tags=["Comments"],
-    responses={200: CommentSerializer}
+    responses={200: get_standard_response(CommentSerializer)}
 ))
 class CommentDetailAPIView(generics.RetrieveAPIView):
     """

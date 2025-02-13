@@ -1,7 +1,6 @@
 from rest_framework import pagination
 from rest_framework.response import Response
 
-
 class CustomPagination(pagination.PageNumberPagination):
     """Custom pagination."""
 
@@ -12,7 +11,7 @@ class CustomPagination(pagination.PageNumberPagination):
 
 # PROJECTS
 
-class ProjectsPagination(CustomPagination):
+class ProjectsPagination(CustomPagination):    
     def get_paginated_response(self, data):
         current_page = self.page.number
         total_pages = self.page.paginator.num_pages
@@ -30,7 +29,7 @@ class ProjectsPagination(CustomPagination):
 
 # PROJECTS
 
-class CommentsPagination(CustomPagination):
+class CommentsPagination(CustomPagination):    
     def get_paginated_response(self, data):
         current_page = self.page.number
         total_pages = self.page.paginator.num_pages
