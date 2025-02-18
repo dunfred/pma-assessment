@@ -11,7 +11,8 @@ from api.views.project import (
     ProjectListAPIView,
     ProjectUpdateAPIView,
     ProjectDeleteAPIView,
-    UpdateMemberRoleAPIView
+    UpdateMemberRoleAPIView,
+    UploadCommentDocumentAPIView
 )
 from api.views.user import (
     UserDetail,
@@ -49,4 +50,8 @@ urlpatterns = [
     path('comments/create/', CommentCreateAPIView.as_view(), name='comment-create'),
     path('comments/<int:pk>/', CommentDetailAPIView.as_view(), name='comment-detail'),
     path('comments/<int:pk>/delete/', CommentDeleteAPIView.as_view(), name='comment-delete'),
+    
+    # Documents
+    path('comments/documents/create/', UploadCommentDocumentAPIView.as_view(), name='comment-document-upload'),
+    
 ]

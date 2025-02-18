@@ -1,5 +1,10 @@
+import uuid
 from django.db import models
 from apps.user.models import User
+
+def comment_document_upload_location(instance, filename):
+    file_extension = filename.split('.')[-1]
+    return f"comments/{instance.user.username}/{uuid.uuid4()}.{file_extension}"
 
 # Create your models here.
 class Project(models.Model):
@@ -32,9 +37,17 @@ class ProjectRole(models.Model):
 class Comment(models.Model):
     project    = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='comments')
     user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
-    content    = models.TextField()
+    content    = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"Comment by {self.user.username} on {self.project.title}"
+
+class Document(models.Model):
+    user    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_documents')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='documents')
+    file    = models.FileField(upload_to=comment_document_upload_location)
+
+    def __str__(self):
+        return f"{self.comment} Document"
 
