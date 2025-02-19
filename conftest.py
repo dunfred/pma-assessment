@@ -2,9 +2,9 @@ import uuid
 import pytest
 from apps.user.models import User
 from rest_framework.test import APIClient
-from apps.project.models import Project, ProjectRole
+from apps.project.models import Comment, Project, ProjectRole
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 @pytest.fixture
 def api_client():
@@ -30,7 +30,6 @@ def create_user(db):
         user.save()
         return user
     return make_user
-
 
 
 @pytest.fixture
@@ -62,3 +61,34 @@ def authenticated_project_owner(api_client, create_project):
     
     return api_client, owner, project  # Ensure tuple is returned
 
+
+@pytest.fixture
+def authenticated_comment_owner(api_client, create_project):
+    """Fixture for an authenticated user who created a comment."""
+    project, owner = create_project()
+    
+    # Create a comment.
+    comment = Comment.objects.create(
+        content="This is the owner of this project. Put some respect on that.",
+        user=owner,
+        project=project
+    )
+
+    refresh = RefreshToken.for_user(owner)
+    access_token = str(refresh.access_token)
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+
+    return api_client, owner, comment  # Ensure tuple is returned
+
+
+@pytest.fixture
+def valid_file():
+    return SimpleUploadedFile("valid.pdf", b"dummy content " * 512, content_type="application/pdf")
+
+@pytest.fixture
+def small_file():
+    return SimpleUploadedFile("small.pdf", b"x", content_type="application/pdf")
+
+@pytest.fixture
+def large_file():
+    return SimpleUploadedFile("large.pdf", b"x" * (5 * 1024 * 1024 + 1), content_type="application/pdf")

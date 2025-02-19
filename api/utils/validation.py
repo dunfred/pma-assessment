@@ -24,14 +24,21 @@ def custom_exception_handler(exc, context):
                         customized_response['detail']= ". ".join(value)
                     else:
                         customized_response['detail']= value
-                        
+
                 else:
                     if type(value) is dict:
-                        for k,v in value.items():
-                            customized_response['validations'][key][k] = v
-                    elif type(value) is list:
-                        for inner_val in value:
+                        if key not in customized_response['validations']:
                             customized_response['validations'][key] = {}
+
+                        for k,v in value.items():
+                            if type(v) is list:
+                                customized_response['validations'][key][k] = " ".join(v)
+                            else:
+                                customized_response['validations'][key][k] = v
+
+                    elif type(value) is list:
+                        customized_response['validations'][key] = {}
+                        for inner_val in value:
                             if type(inner_val) is dict:
                                 for k,v in inner_val.items():
                                     customized_response['validations'][key][k] = v

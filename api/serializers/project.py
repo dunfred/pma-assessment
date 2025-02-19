@@ -81,20 +81,18 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 
     def validate_files(self, value):
         errors_list = []
-        
+
         for file in value:
             min_size = 1024  # 1KB
             max_size = 5 * 1024 * 1024  # 5MB
 
             if file.size < min_size:
                 errors_list.append({   
-                    "file": file.name,
-                    "message":"File size must be at least 1KB."
+                    file.name: "File size must be at least 1KB."
                 })
             if file.size > max_size:
                 errors_list.append({   
-                    "file": file.name,
-                    "message":"File size cannot exceed 5MB."
+                    file.name: "File size cannot exceed 5MB."
                 })
         if errors_list:
             raise serializers.ValidationError(errors_list)
@@ -106,7 +104,7 @@ class CommentCreateSerializer(serializers.ModelSerializer):
         if not attrs.get('content', False) and not attrs.get('files', False):
             raise serializers.ValidationError({'detail': 'Comment must have either content or file added.'})
         return attrs
-        # return super().validate(attrs)
+
 
     def create(self, validated_data):
         
