@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from apps.project.models import Project, ProjectRole, Comment
+from apps.project.models import Project, ProjectRole, Comment, Document
 from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter
 
 # Register your models here.
@@ -15,6 +15,17 @@ class EditLinkToInlineObject(object):
             return ''
 
 # Inline Forms
+
+class DocumentInlineAdmin(EditLinkToInlineObject, admin.TabularInline):
+    model = Document
+    extra = 0
+    max_num = 10 # Restricts the maximum number of documentss per project page to 10 for performance reasons
+    classes = ['collapse', ]
+    list_display = [ 'user', 'comment']
+    autocomplete_fields = ['user', 'comment']
+
+    show_full_result_count = True # Set to False if page starts loading slow as data increases
+
 
 class CommentInlineAdmin(EditLinkToInlineObject, admin.TabularInline):
     model = Comment
@@ -82,4 +93,5 @@ class CommentAdmin(admin.ModelAdmin):
         ('project', RelatedDropdownFilter),
     )
     search_fields = ['content']
+    inlines = [DocumentInlineAdmin]
     autocomplete_fields = ['user', 'project']

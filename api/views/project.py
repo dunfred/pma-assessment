@@ -1,4 +1,4 @@
-from rest_framework import status, generics
+from rest_framework import status, generics, exceptions
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -7,9 +7,10 @@ from api.pagination import CommentsPagination, ProjectsPagination
 from api.utils.renderers import get_standard_response
 from apps.project.models import Comment, Project, ProjectRole
 from rest_framework.permissions import IsAuthenticated
-from api.serializers.project import CommentCreateSerializer, CommentSerializer, ProjectRoleSerializer, ProjectSerializer, ProjectUpdateSerializer
+from api.serializers.project import CommentCreateSerializer, CommentSerializer, DocumentSerializer, ProjectRoleSerializer, ProjectSerializer, ProjectUpdateSerializer
 from api.utils.permissions import (
     CanCommentOnProject,
+    CanUploadCommentDocument,
     IsProjectEditorOrHigher,
     IsProjectMember,
     IsProjectOwner,
@@ -27,14 +28,14 @@ from apps.user.models import User
     operation_id='listProjects',
     tags=["Projects"],
     responses={
-        200: ProjectSerializer(many=True)
+        200: get_standard_response(ProjectSerializer, many=True)
     }
 ))
 class ProjectListAPIView(generics.ListAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated, IsProjectMember] # Any project memnber can view their projects
     pagination_class = ProjectsPagination
-    
+
     def get_queryset(self):
         queryset = Project.objects.filter(projectrole__user=self.request.user).distinct()
         return queryset.order_by('-updated_at')
@@ -71,12 +72,21 @@ class ProjectCreateAPIView(APIView):
     tags=["Projects"],
     responses={200: get_standard_response(ProjectSerializer)}
 ))
-class ProjectDetailAPIView(APIView):
-    permission_classes = [IsAuthenticated] # Any project memnber can view a single project
+class ProjectDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, IsProjectMember] # Any project memnber can view a single project
+    lookup_field = 'id'
 
     def get_object(self, id):
-        return get_object_or_404(Project, id=id, projectrole__user=self.request.user)
-    
+        proj =  Project.objects.filter(id=id, projectrole__user=self.request.user).first()
+        
+        if not proj:
+            raise exceptions.NotFound('Project not found')
+        
+        # Manually trigger permission check
+        self.check_object_permissions(self.request, proj)
+
+        return proj
+
     def get(self, request, id):
         project = self.get_object(id)
         serializer = ProjectSerializer(project)
@@ -215,7 +225,7 @@ class UpdateMemberRoleAPIView(APIView):
     description="Retrieve a list of comments under a project.",
     methods=['get'],
     tags=["Comments"],
-    responses={200: CommentSerializer(many=True)}
+    responses={200: get_standard_response(CommentSerializer, many=True)}
 ))
 class CommentListAPIView(generics.ListAPIView):
     """
@@ -276,3 +286,27 @@ class CommentDeleteAPIView(generics.DestroyAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated, IsProjectOwnerOrCommentOwner] # Comment creator or project owner can delete a comment
+
+
+# COMMENT DOCUMENTS
+@extend_schema_view(post=extend_schema(
+    summary="Upload Comment Document",
+    description="Upload Comment Document",
+    methods=['post'],
+    tags=["Comments"],
+    request=DocumentSerializer,
+    responses={200: "{'message': 'document uploaded successfully'}"}
+))
+class UploadCommentDocumentAPIView(APIView):
+    serializer_class = DocumentSerializer
+    permission_classes = [IsAuthenticated, CanUploadCommentDocument]  # Only owners and editors can add documents to comments
+
+    def post(self, request):
+        ser = self.serializer_class(data=request.data, context={'request':request})
+
+        if ser.is_valid(raise_exception=True):
+            ser.save()
+            return Response({'message': 'document uploaded successfully'}, status=status.HTTP_200_OK)
+
+
+

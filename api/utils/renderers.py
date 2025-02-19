@@ -65,26 +65,30 @@ class StandardResponseSerializer(serializers.Serializer):
     success = serializers.BooleanField(default=True)
     data = serializers.DictField()
 
-def get_standard_response(serializer=None, example=None):
+def get_standard_response(serializer=None, example=None, many=False):
     """
     Wraps a given serializer inside the standard response structure.
     Handles both single object and list serializers.
+    Dynamically generates unique class names to prevent schema conflicts.
     """
-    class WrappedStandardResponseSerializer(serializers.Serializer):
-        success = serializers.BooleanField(default=True)
-        data = serializers.DictField()
 
     if serializer:
-        # Check if the serializer is a ListSerializer (many=True)
-        if isinstance(serializer, serializers.ListSerializer):
-            class WrappedSerializer(serializers.Serializer):
-                success = serializers.BooleanField(default=True)
-                data = serializers.ListField(child=serializer)
-        else:
-            class WrappedSerializer(serializers.Serializer):
-                success = serializers.BooleanField(default=True)
-                data = serializer()
+        # Extract serializer name dynamically
+        serializer_name = serializer.__name__ if hasattr(serializer, '__name__') else serializer.__class__.__name__
+        wrapper_name = f"Wrapped{serializer_name}"  # Unique class name
+
+        # Dynamically create a unique Wrapped serializer class
+        WrappedSerializer = type(
+            wrapper_name,
+            (serializers.Serializer,),
+            {
+                "success": serializers.BooleanField(default=True),
+                "data": serializers.ListField(child=serializer()) if many else serializer(),
+            }
+        )
 
         return OpenApiResponse(response=WrappedSerializer)
-    
-    return OpenApiResponse(response=WrappedStandardResponseSerializer, examples=[example] if example else None)
+
+    return OpenApiResponse(response=None, examples=[example] if example else None)
+
+
